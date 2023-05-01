@@ -170,6 +170,9 @@ class OvmsPoller {
     class PollSeriesEntry
       {
       public:
+        /// Set the parent poller
+        virtual void SetParentPoller(OvmsPoller *poller) = 0;
+
         /** Move list to start.
           * @arg  mode Specify Resetting for Poll-Start or for Retry
           */
@@ -293,6 +296,8 @@ class OvmsPoller {
       public:
         StandardPollSeries(OvmsPoller *poller, uint16_t stateoffset = 0);
 
+        void SetParentPoller(OvmsPoller *poller) override;
+
         /// Set the PID list and default bus.
         void PollSetPidList(uint8_t defaultbus, const poll_pid_t* plist);
 
@@ -316,6 +321,34 @@ class OvmsPoller {
 
         bool HasRepeat() override;
       };
+
+    typedef std::function<void(uint16_t type, uint32_t module_sent, uint32_t module_rec, uint16_t pid, const std::string &data)> poll_success_func;
+    typedef std::function<void(uint16_t type, uint32_t module_sent, uint32_t module_rec, uint16_t pid, int errorcode)> poll_fail_func;
+
+    /** Standard Poll Series that assembles packets to complete results.
+      */
+    class StandardPacketPollSeries : public StandardPollSeries
+      {
+      protected:
+        std::string m_data;
+        int m_repeat_max, m_repeat_count;
+        poll_success_func m_success;
+        poll_fail_func m_fail;
+      public:
+        StandardPacketPollSeries( OvmsPoller *poller, int repeat_max, poll_success_func success, poll_fail_func fail);
+
+        // Move list to start.
+        void ResetList(ResetMode mode) override;
+
+        // Process an incoming packet.
+        void IncomingPacket(canbus* bus, const OvmsPoller::poll_state_t& state, uint8_t* data, uint8_t length) override;
+
+        // Process An Error
+        void IncomingError(canbus* bus, const OvmsPoller::poll_state_t& state, uint16_t code) override;
+
+        // Return true if this series has entries to retry/redo.
+        bool HasRepeat() override;
+     };
 
    /** Base for Once off Poll series.
     */
@@ -350,6 +383,8 @@ class OvmsPoller {
 
         // Move list to start.
         void ResetList(ResetMode mode) override;
+
+        void SetParentPoller(OvmsPoller *poller) override;
 
         // Find the next poll entry.
         OvmsPoller::OvmsNextPollResult NextPollEntry(poll_pid_t &entry,  uint8_t mybus, uint32_t pollticker, uint8_t pollstate) override;
@@ -390,7 +425,29 @@ class OvmsPoller {
       void Removing() override;
     };
 
+  public:
+   /** Once off poll entry with buffer and asynchronous result call-backs.
+    */
+   class OnceOffPoll : public OnceOffPollBase
+      {
+      protected:
+        poll_success_func m_success;
+        poll_fail_func m_fail;
+        std::string m_data;
+        int m_error;
 
+        void Done(bool success) override;
+      public:
+        OnceOffPoll(poll_success_func success, poll_fail_func fail,
+            uint32_t txid, uint32_t rxid, const std::string &request, uint8_t protocol=ISOTP_STD, uint8_t pollbus = 0, uint8_t retry_fail = 0);
+        OnceOffPoll(poll_success_func success, poll_fail_func fail,
+            uint32_t txid, uint32_t rxid, uint8_t polltype, uint16_t pid,  uint8_t protocol=ISOTP_STD, uint8_t pollbus = 0, uint8_t retry_fail = 0);
+
+        // Called when run is finished to determine what happens next.
+        SeriesStatus FinishRun() override;
+
+        void Removing() override;
+      };
 
   protected:
     canbus* m_bus;
@@ -561,6 +618,8 @@ class OvmsPoller {
                       uint8_t polltype, uint16_t pid, std::string& response,
                       int timeout_ms=3000, uint8_t protocol=ISOTP_STD);
 
+    void PollRequest(const std::string &name, const std::shared_ptr<PollSeriesEntry> &series);
+    void RemovePollRequest(const std::string &name);
   public:
     static const char *PollerCommand(OvmsPollCommand src);
     static const char *PollerSource(poller_source_t src);
