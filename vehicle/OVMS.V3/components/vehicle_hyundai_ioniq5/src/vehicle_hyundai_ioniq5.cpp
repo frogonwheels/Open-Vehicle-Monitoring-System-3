@@ -684,7 +684,7 @@ void OvmsHyundaiIoniqEv::ECUStatusChange(bool run)
   } else {
     // Add an extra set of polling.
     auto poll_series = std::shared_ptr<OvmsPoller::StandardPacketPollSeries>(
-        new OvmsPoller::StandardPacketPollSeries(nullptr, 4/*repeats*/,
+        new OvmsPoller::StandardPacketPollSeries(nullptr, 3/*repeats*/,
               std::bind(&OvmsHyundaiIoniqEv::Incoming_Full, this, _1, _2, _3, _4, _5),
               nullptr));
     poll_series->PollSetPidList(1, vehicle_ioniq_driving_polls);
@@ -692,7 +692,7 @@ void OvmsHyundaiIoniqEv::ECUStatusChange(bool run)
     PollRequest(m_can1, ECU_POLL, poll_series);
   }
   if (subtick)
-    PollSetTicker(200, 4);
+    PollSetTicker(333, 3);
   else
     PollSetTicker(1000, 1);
 }
