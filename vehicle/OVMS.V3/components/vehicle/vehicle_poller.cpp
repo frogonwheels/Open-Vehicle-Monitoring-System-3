@@ -433,7 +433,7 @@ void OvmsPoller::PollerSend(poller_source_t source)
       }
     else
       {
-      ESP_LOGV(TAG, "[%" PRIu8 "]Poller Reset for Repeat", m_can_number);
+      ESP_LOGV(TAG, "[%" PRIu8 "]Poller Reset for Repeat (%s)", m_can_number, OvmsPoller::PollerSource(source));
       m_polls.RestartPoll(OvmsPoller::ResetMode::LoopReset);
       // If this poll is from a ISOTP success, don't overwhelm the ECU,
       // wait until a Secondary tick.
@@ -797,7 +797,7 @@ void OvmsPollers::PollerTask()
         case OvmsPoller::OvmsPollEntryType::FrameRx:
           {
           auto poller = GetPoller(entry.entry_FrameRxTx.frame.origin);
-          ESP_LOGD(TAG, "Pollers: FrameRx(bus=%d)", m_parent_callback->GetBusNo(entry.entry_FrameRxTx.frame.origin));
+          ESP_LOGV(TAG, "Pollers: FrameRx(bus=%d)", m_parent_callback->GetBusNo(entry.entry_FrameRxTx.frame.origin));
           if (poller)
             poller->Incoming(entry.entry_FrameRxTx.frame, entry.entry_FrameRxTx.success);
           // pass to parent
@@ -807,7 +807,7 @@ void OvmsPollers::PollerTask()
         case OvmsPoller::OvmsPollEntryType::FrameTx:
           {
           auto poller = GetPoller(entry.entry_FrameRxTx.frame.origin);
-          ESP_LOGD(TAG, "Pollers: FrameTx(bus=%d)", m_parent_callback->GetBusNo(entry.entry_FrameRxTx.frame.origin));
+          ESP_LOGV(TAG, "Pollers: FrameTx(bus=%d)", m_parent_callback->GetBusNo(entry.entry_FrameRxTx.frame.origin));
           if (poller)
             poller->Outgoing(entry.entry_FrameRxTx.frame, entry.entry_FrameRxTx.success);
           }
@@ -1294,12 +1294,12 @@ OvmsPoller::OvmsNextPollResult OvmsPoller::PollSeriesList::NextPollEntry(poll_pi
   {
   if (!m_first)
     {
-    ESP_LOGD(TAG, "PollSeriesList::NextPollEntry - No List Set");
+    ESP_LOGV(TAG, "PollSeriesList::NextPollEntry - No List Set");
     return OvmsPoller::OvmsNextPollResult::StillAtEnd;
     }
   if (!m_iter)
     {
-    ESP_LOGD(TAG, "PollSeriesList::NextPollEntry - Not Started");
+    ESP_LOGV(TAG, "PollSeriesList::NextPollEntry - Not Started");
     return OvmsPoller::OvmsNextPollResult::StillAtEnd;
     }
 
@@ -1313,7 +1313,7 @@ OvmsPoller::OvmsNextPollResult OvmsPoller::PollSeriesList::NextPollEntry(poll_pi
       ++skipped;
       }
     if (skipped)
-      ESP_LOGD(TAG, "PollSeriesList::NextPollEntry Skipped %d", skipped);
+      ESP_LOGV(TAG, "PollSeriesList::NextPollEntry Skipped %d", skipped);
 
     if (m_iter == nullptr)
       return OvmsPoller::OvmsNextPollResult::ReachedEnd;
@@ -1527,7 +1527,7 @@ void OvmsPoller::StandardPacketPollSeries::ResetList(OvmsPoller::ResetMode mode)
         m_repeat_count = 0;
         break;
       case OvmsPoller::ResetMode::LoopReset:
-        if (m_repeat_count >= m_repeat_max)
+        if (++m_repeat_count >= m_repeat_max)
           return; // No more retries... don't reset the loop.
         break;
     }
