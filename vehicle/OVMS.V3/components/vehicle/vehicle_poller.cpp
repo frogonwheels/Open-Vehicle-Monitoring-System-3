@@ -273,6 +273,18 @@ bool OvmsVehicle::CanPoll()
   return (!m_poll_sequence_max || m_poll_sequence_cnt < m_poll_sequence_max);
   }
 
+void OvmsVehicle::PausePolling()
+  {
+  OvmsRecMutexLock slock(&m_poll_single_mutex);
+  OvmsRecMutexLock lock(&m_poll_mutex);
+  m_poll_paused = true;
+  }
+void OvmsVehicle::ResumePolling()
+  {
+  OvmsRecMutexLock lock(&m_poll_mutex);
+  m_poll_paused = false;
+  }
+
 OvmsVehicle::OvmsNextPollResult OvmsVehicle::NextPollEntry(OvmsPoller::poll_pid_t *entry)
   {
   *entry = {};
@@ -361,6 +373,7 @@ void OvmsVehicle::PollerSend(poller_source_t source)
   // Check poll bus & list:
   if (!HasPollList()) return;
 
+  if (m_poll_paused) return;
 
   switch (NextPollEntry(&m_poll_entry))
     {

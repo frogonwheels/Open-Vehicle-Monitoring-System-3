@@ -592,8 +592,14 @@ class OvmsVehicle : public InternalRamAllocated
     uint8_t           m_poll_state;           // Current poll state
     canbus*           m_poll_bus;             // Bus to poll on
     canbus*           m_poll_bus_default;     // Bus default to poll on
+  private:
+    // Poll state
+    bool              m_poll_paused;
+
     const OvmsPoller::poll_pid_t* m_poll_plist;           // Head of poll list
     const OvmsPoller::poll_pid_t* m_poll_plcur;           // Poll list loop cursor
+  protected:
+
     OvmsPoller::poll_pid_t        m_poll_entry;           // Currently processed entry of poll list (copy)
 
     uint32_t          m_poll_ticker;          // Polling ticker
@@ -630,6 +636,9 @@ class OvmsVehicle : public InternalRamAllocated
 
     // Check for throttling.
     bool CanPoll();
+
+    void PausePolling();
+    void ResumePolling();
 
     // Polling
     virtual void IncomingPollReply(canbus* bus, const OvmsPoller::poll_state_t& state, uint8_t* data, uint8_t length, const OvmsPoller::poll_pid_t &pollentry);
