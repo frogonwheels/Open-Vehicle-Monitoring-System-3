@@ -68,9 +68,11 @@ enum poll_states
 
 static const OvmsPoller::poll_pid_t obdii_polls[] =
   {
+    // BUS 2
     { CHARGER_TXID, CHARGER_RXID, VEHICLE_POLL_TYPE_OBDIIGROUP, VIN_PID, {  0, 900, 0, 0 }, 2, ISOTP_STD },           // VIN [19]
     { CHARGER_TXID, CHARGER_RXID, VEHICLE_POLL_TYPE_OBDIIEXTENDED, QC_COUNT_PID, {  0, 900, 0, 0 }, 2, ISOTP_STD },   // QC [2]
     { CHARGER_TXID, CHARGER_RXID, VEHICLE_POLL_TYPE_OBDIIEXTENDED, L1L2_COUNT_PID, {  0, 900, 0, 0 }, 2, ISOTP_STD }, // L0/L1/L2 [2]
+    // BUS 1
     { BMS_TXID, BMS_RXID, VEHICLE_POLL_TYPE_OBDIIGROUP, 0x01, {  0, 60, 0, 60 }, 1, ISOTP_STD },   // bat [39/41]
     { BMS_TXID, BMS_RXID, VEHICLE_POLL_TYPE_OBDIIGROUP, 0x02, {  0, 60, 0, 60 }, 1, ISOTP_STD },   // battery voltages [196]
     { BMS_TXID, BMS_RXID, VEHICLE_POLL_TYPE_OBDIIGROUP, 0x06, {  0, 60, 0, 60 }, 1, ISOTP_STD },   // battery shunts [96]
@@ -568,13 +570,13 @@ bool OvmsVehicleNissanLeaf::ObdRequest(uint16_t txid, uint16_t rxid, uint32_t re
   }
   poll[0].pollbus = bus;
   // stop default polling:
-  PollSetPidList(m_poll_bus, NULL);
+  PollSetPidList(m_poll_bus_default, NULL);
   vTaskDelay(pdMS_TO_TICKS(100));
 
   // clear rx semaphore, start single poll:
   nl_obd_rxwait.Take(0);
   nl_obd_rxbuf.clear();
-  PollSetPidList(m_poll_bus, poll);
+  PollSetPidList(m_poll_bus_default, poll);
 
   // wait for response:
   bool rxok = nl_obd_rxwait.Take(pdMS_TO_TICKS(timeout_ms));
@@ -586,7 +588,7 @@ bool OvmsVehicleNissanLeaf::ObdRequest(uint16_t txid, uint16_t rxid, uint32_t re
   // restore default polling:
   nl_obd_rxwait.Give();
   vTaskDelay(pdMS_TO_TICKS(100));
-  PollSetPidList(m_poll_bus, obdii_polls);
+  PollSetPidList(m_poll_bus_default, obdii_polls);
 
   return (rxok == pdTRUE);
   }
@@ -837,7 +839,7 @@ void OvmsVehicleNissanLeaf::IncomingPollReply( canbus* bus, const OvmsPoller::po
     // single poll?
     if (!nl_obd_rxwait.IsAvail()) {
       // yes: stop poller & signal response
-      PollSetPidList(m_poll_bus, NULL);
+      PollSetPidList(m_poll_bus_default, NULL);
       nl_obd_rxwait.Give();
     }
   }

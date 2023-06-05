@@ -289,7 +289,7 @@ void OvmsVehicleHyundaiVFL::IncomingPollReply(canbus* bus, const OvmsPoller::pol
       UpdateTripCounters();
 
       // Read battery module temperatures 1-5 (only when also polling PIDs 02…05):
-      if (m_poll_state != STATE_OFF && m_poll_ticker % 15 == 0)
+      if (m_poll_state != STATE_OFF /*&& m_poll_ticker % 15 == 0 ?? why*/)
       {
         BmsRestartCellTemperatures();
         for (int i = 0; i < 5; i++) {
