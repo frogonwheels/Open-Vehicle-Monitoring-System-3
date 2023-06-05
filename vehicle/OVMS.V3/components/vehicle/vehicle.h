@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <memory>
 #include "can.h"
 #include "ovms_events.h"
 #include "ovms_config.h"
@@ -539,6 +540,7 @@ class OvmsVehicle : public InternalRamAllocated
     virtual void IncomingPollError(canbus* bus, const OvmsPoller::poll_state_t& state, uint16_t code, const OvmsPoller::poll_pid_t &pollentry);
 
   protected:
+
     virtual void IncomingPollTxCallback(canbus* bus, uint32_t txid, uint16_t type, uint16_t pid, bool success);
     void IncomingPollRxFrame(canbus* bus, CAN_frame_t *frame, bool success);
     uint8_t           m_poll_state;           // Current poll state

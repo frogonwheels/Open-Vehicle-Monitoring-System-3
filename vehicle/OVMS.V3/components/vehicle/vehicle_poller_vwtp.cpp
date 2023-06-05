@@ -54,12 +54,11 @@ void OvmsPoller::PollerVWTPStart(bool fromTicker)
       PollerVWTPEnter(VWTP_ChannelClose);
     else if (m_poll_entry.rxmoduleid != 0)
       PollerVWTPEnter(VWTP_ChannelSetup);
-    else if (m_poll_single_rxbuf)
+    else
       {
-      m_poll_single_rxbuf->clear();
-      m_poll_single_rxbuf = NULL;
-      m_poll_single_rxerr = POLLSINGLE_OK;
-      m_poll_single_rxdone.Give();
+      OvmsRecMutexLock lock(&m_poll_mutex);
+      OvmsPoller::poll_state_t state(m_poll_moduleid_sent, m_poll_moduleid_low, m_poll_type, m_poll_pid);
+      m_polls.IncomingError(m_poll_vwtp.bus, state, POLLSINGLE_OK);
       }
     return;
     }
@@ -505,12 +504,11 @@ bool OvmsPoller::PollerVWTPReceive(CAN_frame_t* frame, uint32_t msgid)
         // Check if we shall open another channel:
         if (m_poll_protocol == VWTP_20 && m_poll_entry.rxmoduleid != 0)
           PollerVWTPEnter(VWTP_ChannelSetup);
-        else if (m_poll_single_rxbuf)
+        else
           {
-          m_poll_single_rxbuf->clear();
-          m_poll_single_rxbuf = NULL;
-          m_poll_single_rxerr = POLLSINGLE_OK;
-          m_poll_single_rxdone.Give();
+          OvmsRecMutexLock lock(&m_poll_mutex);
+          OvmsPoller::poll_state_t state(m_poll_moduleid_sent, m_poll_moduleid_low, m_poll_type, m_poll_pid);
+          m_polls.IncomingError(frame->origin, state, POLLSINGLE_OK);
           }
         }
       else
@@ -700,26 +698,13 @@ bool OvmsPoller::PollerVWTPReceive(CAN_frame_t* frame, uint32_t msgid)
           else
             {
             // Error: forward to application:
-            ESP_LOGD(TAG, "[%" PRIu8 "]PollerVWTPReceive[%02X]: process OBD/UDS error %02X(%X) code=%02X",
-                m_can_number, m_poll_vwtp.moduleid, m_poll_type, m_poll_pid, error_code);
-            // Running single poll?
-            if (m_poll_single_rxbuf)
+            ESP_LOGD(TAG, "PollerVWTPReceive[%02X]: process OBD/UDS error %02X(%X) code=%02X",
+                      m_poll_vwtp.moduleid, m_poll_type, m_poll_pid, error_code);
+
               {
-              m_poll_single_rxerr = error_code;
-              m_poll_single_rxbuf = NULL;
-              m_poll_single_rxdone.Give();
-              }
-            else
-              {
-              OvmsPoller::poll_state_t state;
-              state.moduleidsent = m_poll_moduleid_sent;
-              state.moduleidrec = msgid;
-              state.type = m_poll_type;
-              state.pid = m_poll_pid;
-              state.mlframe = 0;
-              state.mloffset = 0;
-              state.mlremain = 0;
-              IncomingPollError(frame->origin, state, error_code, m_poll_entry);
+              OvmsRecMutexLock lock(&m_poll_mutex);
+              OvmsPoller::poll_state_t state(m_poll_moduleid_sent, msgid, m_poll_type, m_poll_pid);
+              m_polls.IncomingError(frame->origin, state, error_code);
               }
             // abort receive:
             m_poll_ml_remain = 0;
@@ -734,36 +719,14 @@ bool OvmsPoller::PollerVWTPReceive(CAN_frame_t* frame, uint32_t msgid)
 
           // Normal matching poll response, forward to application:
           m_poll_ml_remain -= tp_datalen;
-          ESP_LOGD(TAG, "[%" PRIu8 "]PollerVWTPReceive[%02X]: process OBD/UDS response %02X(%X) frm=%u len=%u off=%u rem=%u",
-            m_can_number, m_poll_vwtp.moduleid, m_poll_type, m_poll_pid,
+          ESP_LOGD(TAG, "PollerVWTPReceive[%02X]: process OBD/UDS response %02X(%X) frm=%u len=%u off=%u rem=%u",
+                    m_poll_vwtp.moduleid, m_poll_type, m_poll_pid,
                     m_poll_ml_frame, response_datalen, m_poll_ml_offset, m_poll_ml_remain);
-          // Running single poll?
-          if (m_poll_single_rxbuf)
             {
-            if (m_poll_ml_frame == 0)
-              {
-              m_poll_single_rxbuf->clear();
-              m_poll_single_rxbuf->reserve(response_datalen + m_poll_ml_remain);
-              }
-            m_poll_single_rxbuf->append((char*)response_data, response_datalen);
-            if (m_poll_ml_remain == 0)
-              {
-              m_poll_single_rxerr = 0;
-              m_poll_single_rxbuf = NULL;
-              m_poll_single_rxdone.Give();
-              }
-            }
-          else
-            {
-            OvmsPoller::poll_state_t state;
-            state.moduleidsent = m_poll_moduleid_sent;
-            state.moduleidrec = msgid;
-            state.type = m_poll_type;
-            state.pid = m_poll_pid;
-            state.mlframe = m_poll_ml_frame;
-            state.mloffset = m_poll_ml_offset;
-            state.mlremain = m_poll_ml_remain;
-            IncomingPollReply(frame->origin, state, response_data, response_datalen, m_poll_entry);
+            OvmsRecMutexLock lock(&m_poll_mutex);
+            OvmsPoller::poll_state_t state(m_poll_moduleid_sent, msgid, m_poll_type, m_poll_pid,
+              m_poll_ml_frame, m_poll_ml_offset,  m_poll_ml_remain);
+            m_polls.IncomingPacket(frame->origin, state, response_data, response_datalen);
             }
           }
         else
