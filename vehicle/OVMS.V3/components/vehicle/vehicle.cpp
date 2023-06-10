@@ -171,27 +171,26 @@ OvmsVehicle* OvmsVehicleFactory::NewVehicle(const char* VehicleType)
 
 void OvmsVehicleFactory::ClearVehicle()
   {
+  DoClearVehicle(true);
+  }
+void OvmsVehicleFactory::DoClearVehicle( bool clearName)
+  {
   if (m_currentvehicle)
     {
-    m_currentvehicle->m_ready = false;
-    delete m_currentvehicle;
+    auto vehicle = m_currentvehicle;
     m_currentvehicle = NULL;
+    vehicle->m_ready = false;
+    delete vehicle;
     m_currentvehicletype.clear();
-    StandardMetrics.ms_v_type->SetValue("");
+    if (clearName)
+      StandardMetrics.ms_v_type->SetValue("");
     MyEvents.SignalEvent("vehicle.type.cleared", NULL);
     }
   }
 
 void OvmsVehicleFactory::SetVehicle(const char* type)
   {
-  if (m_currentvehicle)
-    {
-    m_currentvehicle->m_ready = false;
-    delete m_currentvehicle;
-    m_currentvehicle = NULL;
-    m_currentvehicletype.clear();
-    MyEvents.SignalEvent("vehicle.type.cleared", NULL);
-    }
+  DoClearVehicle(false);
   m_currentvehicle = NewVehicle(type);
   if (m_currentvehicle)
   {
