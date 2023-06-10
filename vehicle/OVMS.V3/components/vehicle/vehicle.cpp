@@ -2310,7 +2310,11 @@ void OvmsVehicle::PollSetResponseSeparationTime(uint8_t septime)
   }
 void OvmsVehicle::PollSetChannelKeepalive(uint16_t keepalive_seconds)
   {
-    m_pollers.PollSetChannelKeepalive(keepalive_seconds);
+  m_pollers.PollSetChannelKeepalive(keepalive_seconds);
+  }
+void OvmsVehicle::PollSetTimeBetweenSuccess(uint16_t time_between_ms)
+  {
+  m_pollers.PollSetTimeBetweenSuccess(time_between_ms);
   }
 
 /**

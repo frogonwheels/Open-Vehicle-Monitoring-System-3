@@ -503,6 +503,7 @@ class OvmsPoller {
     uint8_t           m_poll_sequence_cnt;    // Polls already sent in the current time tick (second)
     uint8_t           m_poll_fc_septime;      // Flow control separation time for multi frame responses
     uint16_t          m_poll_ch_keepalive;    // Seconds to keep an inactive channel (e.g. VWTP) alive (default: 60)
+    uint16_t          m_poll_between_success;
     bool              m_poll_ticked;
     bool              m_poll_run_finished;
 
@@ -535,6 +536,8 @@ class OvmsPoller {
     void PollerVWTPTicker();
     void PollerVWTPTxCallback(const CAN_frame_t* frame, bool success);
 
+    static void DoPollerSendSuccess( void * pvParameter1, uint32_t ulParameter2 );
+
   public:
     bool HasBus(canbus* bus) { return bus == m_bus;}
     uint8_t CanBusNo() { return m_can_number;}
@@ -565,7 +568,8 @@ class OvmsPoller {
       Resume,
       Throttle,
       ResponseSep,
-      Keepalive
+      Keepalive,
+      SuccessSep
       };
     typedef struct {
         CAN_frame_t frame;
@@ -578,6 +582,7 @@ class OvmsPoller {
     typedef struct {
       uint8_t busno ;
       poller_source_t source;
+      uint32_t poll_ticker;
     } poll_source_entry_t;
 
     typedef struct {
@@ -602,11 +607,13 @@ class OvmsPoller {
     void ResetThrottle();
 
     void Queue_PollerSend(poller_source_t source);
+    void Queue_PollerSendSuccess();
 
     void PollSetThrottling(uint8_t sequence_max);
 
     void PollSetResponseSeparationTime(uint8_t septime);
     void PollSetChannelKeepalive(uint16_t keepalive_seconds);
+    void PollSetTimeBetweenSuccess(uint16_t time_between_ms);
 
     // TODO - Work out how to make sure these are protected. Reduce/eliminate mutex time.
     void PollSetPidList(uint8_t defaultbus, const poll_pid_t* plist);
@@ -637,6 +644,7 @@ class OvmsPollers {
     uint8_t           m_poll_sequence_max;    // Polls allowed to be sent in sequence per time tick (second), default 1, 0 = no limit
     uint8_t           m_poll_fc_septime;      // Flow control separation time for multi frame responses
     uint16_t          m_poll_ch_keepalive;    // Seconds to keep an inactive channel (e.g. VWTP) alive (default: 60)
+    uint16_t          m_poll_between_success;
 
     QueueHandle_t m_pollqueue;
     TaskHandle_t m_polltask;
@@ -657,7 +665,7 @@ class OvmsPollers {
 
     OvmsPoller *GetPoller(canbus *can, bool force = false );
 
-    void QueuePollerSend(OvmsPoller::poller_source_t src, uint8_t busno = 0 );
+    void QueuePollerSend(OvmsPoller::poller_source_t src, uint8_t busno = 0 , uint32_t pollticker = 0);
 
     void PollSetPidList(canbus* defbus, const OvmsPoller::poll_pid_t* plist);
 
@@ -676,6 +684,10 @@ class OvmsPollers {
     void PollSetChannelKeepalive(uint16_t keepalive_seconds)
       {
       Queue_Command(OvmsPoller::OvmsPollCommand::Keepalive, keepalive_seconds);
+      }
+    void PollSetTimeBetweenSuccess(uint16_t time_between_ms)
+      {
+      Queue_Command(OvmsPoller::OvmsPollCommand::SuccessSep, time_between_ms);
       }
     // signal poller
     void PollerResetThrottle();
