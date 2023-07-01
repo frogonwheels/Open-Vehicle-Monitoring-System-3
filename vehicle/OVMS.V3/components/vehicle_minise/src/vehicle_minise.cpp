@@ -521,11 +521,11 @@ void OvmsVehicleMiniSE::IncomingPollReply(canbus* bus, const OvmsPoller::poll_st
         ESP_LOGV(TAG, "Received %d bytes for %s, expected %d", datalen, "0x01AD6E", 2);
         break;
       }
-      if (m_poll_entry.args.data[1] == 0x6E) {
-        uint8_t cell = m_poll_entry.args.data[2];
+      if (pollentry.args.data[1] == 0x6E) {
+        uint8_t cell = pollentry.args.data[2];
         ESP_LOGD(TAG, "From ECU %s, pid %s: got %s (cell %d)\n", "SME", "0x01AD6E", "cell voltage selected", cell);
-      } else if (m_poll_entry.args.data[1] == 0x6D) {
-        uint8_t module = m_poll_entry.args.data[2];
+      } else if (pollentry.args.data[1] == 0x6D) {
+        uint8_t module = pollentry.args.data[2];
         ESP_LOGD(TAG, "From ECU %s, pid %s: got %s (cell %d)\n", "SME", "0x01AD6E", "module temp. selected", module);
       }
       break;
@@ -536,15 +536,15 @@ void OvmsVehicleMiniSE::IncomingPollReply(canbus* bus, const OvmsPoller::poll_st
         ESP_LOGV(TAG, "Received %d bytes for %s, expected %d", datalen, "0x03AD6E", 2);
         break;
       }
-      if (m_poll_entry.args.data[1] == 0x6E) {
-        uint8_t cell = m_poll_entry.args.data[2];
+      if (pollentry.args.data[1] == 0x6E) {
+        uint8_t cell = pollentry.args.data[2];
         uint16_t voltage = (RXBUF_UINT(2));
         ESP_LOGD(TAG, "From ECU %s, pid %s: got %s=%.4f%s  (cell %d)\n", "SME", "0x03AD6E",
           "cell voltage", voltage / 1000.0f, "\"V\"", cell);
         ESP_LOGD(TAG, "Cell %d voltage = %f", cell, voltage / 1000.0f);
         BmsSetCellVoltage(cell - 1, voltage / 1000.0f);
-      } else if (m_poll_entry.args.data[1] == 0x6D) {
-        uint8_t module = m_poll_entry.args.data[2];
+      } else if (pollentry.args.data[1] == 0x6D) {
+        uint8_t module = pollentry.args.data[2];
         uint16_t temperature = (RXBUF_UINT(2));
         ESP_LOGD(TAG, "From ECU %s, pid %s: got %s=%.4f%s  (module %d)\n", "SME", "0x03AD6E",
           "module temperature", temperature / 100.0f, "\"°C\"", module);

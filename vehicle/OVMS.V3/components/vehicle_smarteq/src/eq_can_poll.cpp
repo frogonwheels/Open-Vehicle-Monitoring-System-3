@@ -91,7 +91,7 @@ void OvmsVehicleSmartEQ::IncomingPollReply(canbus* bus, const OvmsPoller::poll_s
   // response complete:
   ESP_LOGV(TAG, "IncomingPollReply: PID %02X: len=%d %s", state.pid, m_rxbuf.size(), hexencode(m_rxbuf).c_str());
   
-  switch (m_poll_moduleid_low) {
+  switch (state.moduleidrec) {
     case 0x7BB:
       switch (state.pid) {
         case 0x41: // rqBattVoltages_P1

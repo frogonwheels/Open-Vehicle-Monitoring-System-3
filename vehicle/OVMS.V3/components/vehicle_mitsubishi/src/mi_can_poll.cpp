@@ -34,7 +34,7 @@ static const char *TAGPOLL = "v-trio-poll";
  */
 void OvmsVehicleMitsubishi::IncomingPollReply(canbus* bus, const OvmsPoller::poll_state_t& state, uint8_t* data, uint8_t length, const OvmsPoller::poll_pid_t &pollentry)
 {
-  //ESP_LOGW(TAGPOLL, "%03" PRIx32 " TYPE:%x PID:%02x Data:%02x %02x %02x %02x %02x %02x %02x %02x LENG:%02x REM:%02x", m_poll_moduleid_low, state.type, state.pid, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], length, state.mlremain);
+  //ESP_LOGW(TAGPOLL, "%03" PRIx32 " TYPE:%x PID:%02x Data:%02x %02x %02x %02x %02x %02x %02x %02x LENG:%02x REM:%02x", state.moduleidrec, state.type, state.pid, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], length, state.mlremain);
   // init / fill rx buffer:
     if (state.mlframe == 0)
     {
@@ -49,7 +49,7 @@ void OvmsVehicleMitsubishi::IncomingPollReply(canbus* bus, const OvmsPoller::pol
 
     ESP_LOGV(TAGPOLL, "IncomingPollReply: PID %02X: len=%d %s", state.pid, m_rxbuf.size(), hexencode(m_rxbuf).c_str());
   	//OvmsVehicleMitsubishi* trio = (OvmsVehicleMitsubishi*) MyVehicleFactory.ActiveVehicle();
-    switch (m_poll_moduleid_low)
+    switch (state.moduleidrec)
     {
       // ****** BMU *****
       case 0x762:
@@ -178,7 +178,7 @@ void OvmsVehicleMitsubishi::IncomingPollReply(canbus* bus, const OvmsPoller::pol
       // ****** OBC *****
       case 0x766:
       {
-        ESP_LOGV(TAGPOLL, "%03" PRIx32 " TYPE:%x PID:%02x Data:%02x %02x %02x %02x %02x %02x %02x %02x LENG:%02x REM:%02x", m_poll_moduleid_low, state.type, state.pid, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], length, state.mlremain);
+        ESP_LOGV(TAGPOLL, "%03" PRIx32 " TYPE:%x PID:%02x Data:%02x %02x %02x %02x %02x %02x %02x %02x LENG:%02x REM:%02x", state.moduleidrec, state.type, state.pid, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], length, state.mlremain);
         break;
       }
 
@@ -207,7 +207,7 @@ void OvmsVehicleMitsubishi::IncomingPollReply(canbus* bus, const OvmsPoller::pol
       }
 
      default:
-      ESP_LOGV(TAGPOLL, "Unknown module: %03" PRIx32, m_poll_moduleid_low);
-    }
+	   ESP_LOGV(TAGPOLL, "Unknown module: %03" PRIx32, state.moduleidrec);
+	  }
 
 }

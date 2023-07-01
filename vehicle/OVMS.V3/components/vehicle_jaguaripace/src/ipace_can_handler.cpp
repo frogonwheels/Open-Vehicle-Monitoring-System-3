@@ -162,14 +162,14 @@ void OvmsVehicleJaguarIpace::IncomingPollReply(canbus* bus, const OvmsPoller::po
     ESP_LOGD(
         TAG,
         "%03" PRIx32 " TYPE:%" PRIx16 " PID:%02" PRIx16 " Length:%" PRIx8 " Data:%02" PRIx8 " %02" PRIx8 " %02" PRIx8 " %02" PRIx8,
-        m_poll_moduleid_low,
+        state.moduleidrec,
         state.type,
         state.pid,
         length,
         data[0], data[1], data[2], data[3]
     );
 
-    switch (m_poll_moduleid_low)
+    switch (state.moduleidrec)
     {
         case (becmId | rxFlag):
             IncomingBecmPoll(state.pid, data, length, state.mlremain);

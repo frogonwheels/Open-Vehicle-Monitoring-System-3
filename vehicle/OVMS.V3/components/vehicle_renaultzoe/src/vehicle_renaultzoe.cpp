@@ -819,7 +819,7 @@ void OvmsVehicleRenaultZoe::IncomingPollReply(canbus* bus, const OvmsPoller::pol
   if (state.mlremain)
     return;
   
-	switch (m_poll_moduleid_low) {
+	switch (state.moduleidrec) {
 		// ****** EPS *****
 		case 0x762:
 			IncomingEPS(state.type, state.pid, rxbuf.data(), rxbuf.size());
