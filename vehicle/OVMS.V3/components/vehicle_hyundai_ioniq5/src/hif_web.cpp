@@ -110,7 +110,7 @@ void OvmsHyundaiIoniqEv::WebCfgFeatures(PageEntry_t &p, PageContext_t &c)
         MyConfig.SetParamValueInt("xiq", "notify.charge.delay.type2", charge_delay_type2);
 
       c.head(200);
-      c.alert("success", "<p class=\"lead\">Hyundai Ioniq EV feature configuration saved.</p>");
+      c.alert("success", "<p class=\"lead\">Hyundai Ioniq 5 / Kia EV6 feature configuration saved.</p>");
       MyWebServer.OutputHome(p, c);
       c.done();
       XDISARM;
@@ -137,7 +137,7 @@ void OvmsHyundaiIoniqEv::WebCfgFeatures(PageEntry_t &p, PageContext_t &c)
 
   // generate form:
 
-  c.panel_start("primary", "Hyundai Ioniq EV feature configuration");
+  c.panel_start("primary", "Hyundai Ioniq 5 / Kia EV6 feature configuration");
   c.form_start(p.uri);
 
   c.fieldset_start("General");
@@ -222,7 +222,7 @@ void OvmsHyundaiIoniqEv::WebCfgBattery(PageEntry_t &p, PageContext_t &c)
       MyConfig.SetParamValue("xiq", "suffsoc", suffsoc);
 
       c.head(200);
-      c.alert("success", "<p class=\"lead\">Hyundai Ioniq battery setup saved.</p>");
+      c.alert("success", "<p class=\"lead\">Hyundai Ioniq 5 / Kia EV6 battery setup saved.</p>");
       MyWebServer.OutputHome(p, c);
       c.done();
       XDISARM;
@@ -252,7 +252,7 @@ void OvmsHyundaiIoniqEv::WebCfgBattery(PageEntry_t &p, PageContext_t &c)
 
   // generate form:
 
-  c.panel_start("primary", "Hyundai Ioniq EV battery setup");
+  c.panel_start("primary", "Hyundai Ioniq 5/Kia EV6 battery setup");
   c.form_start(p.uri);
 
   c.fieldset_start("Battery properties");
